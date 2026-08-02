@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Logowanie administratora – System rozliczania zawodów krótkofalarskich</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="login-page">
+    <main class="login-shell">
+        <p class="eyebrow">Tylko dostęp administracyjny</p>
+        <h1>Zaloguj się</h1>
+        <p class="muted">Użyj konta administratora, aby zarządzać zawodami, logami i regułami.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-list">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="post" class="form-grid">
+            <label>
+                Nazwa użytkownika
+                <input name="username" autocomplete="username" required>
+            </label>
+            <label>
+                Hasło
+                <input name="password" type="password" autocomplete="current-password" required>
+            </label>
+            <div class="actions">
+                <a href="{{ url_for('main.index') }}" class="button btn-secondary">Anuluj</a>
+                <button type="submit" class="button">Zaloguj</button>
+            </div>
+        </form>
+    </main>
+</body>
+</html>

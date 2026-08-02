@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Wgraj log{% endblock %}
+
+{% block content %}
+<div class="page-header"><h2>{{ t('upload_title') }}</h2></div>
+
+<section class="card">
+    {% if not editions %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📂</div>
+            <p>Najpierw utwórz zawody i edycję roczną, a następnie wgraj log.</p>
+            <a href="{{ url_for('main.contests') }}" class="button">Przejdź do zawodów</a>
+        </div>
+    {% else %}
+        <form method="post" enctype="multipart/form-data">
+            <div class="form-grid">
+                <div>
+                    <label for="edition_id">{{ t('contest_edition') }} <span style="color:var(--clr-bad)">*</span></label>
+                    <select id="edition_id" name="edition_id" required>
+                        <option value="">Wybierz edycję</option>
+                        {% for edition in editions %}
+                            <option value="{{ edition.id }}" {% if selected_edition_id == edition.id %}selected{% endif %}>
+                                {{ edition.contest.name }} {{ edition.year }}{% if edition.name %} – {{ edition.name }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="category_id">{{ t('participant_category') }}</label>
+                    <select id="category_id" name="category_id">
+                        <option value="">Bez kategorii</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if selected_category_id == category.id %}selected{% endif %}>
+                                {{ category.edition.contest.name }} {{ category.edition.year }} – {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="club_id">{{ t('club') }}</label>
+                    <select id="club_id" name="club_id">
+                        <option value="">{{ t('no_club') }}</option>
+                        {% for club in clubs %}
+                            <option value="{{ club.id }}">{{ club.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="muted">{{ t('club_approved_only') }}</small>
+                </div>
+                <div>
+                    <label for="submitter_email">{{ t('submitter_email') }} <span style="color:var(--clr-bad)">*</span></label>
+                    <input id="submitter_email" name="submitter_email" type="email" required placeholder="twoj@email.com">
+                </div>
+                <div>
+                    <label for="location">{{ t('location') }} <span style="color:var(--clr-bad)">*</span></label>
+                    <input id="location" name="location" type="text" placeholder="Kraj lub okręg" required>
+                </div>
+                <div>
+                    <label for="grid_locator">{{ t('grid_locator') }} <span style="color:var(--clr-bad)">*</span></label>
+                    <input id="grid_locator" name="grid_locator" type="text" placeholder="e.g. KO00AA" required>
+                </div>
+                <div>
+                    <label for="power_category">{{ t('max_power') }} <span style="color:var(--clr-bad)">*</span></label>
+                    <select id="power_category" name="power_category" required>
+                        <option value="">Wybierz klasę mocy</option>
+                        <option value="QRP">QRP &mdash; 5 W lub mniej</option>
+                        <option value="LP">LP &mdash; 100 W lub mniej</option>
+                        <option value="HP">HP &mdash; Powyżej 100 W</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="operators_count">{{ t('operators_count') }} <span style="color:var(--clr-bad)">*</span></label>
+                    <input id="operators_count" name="operators_count" type="number" min="1" required>
+                </div>
+            </div>
+
+            <label style="display:flex;align-items:center;gap:.5rem;margin-top:1rem;font-weight:500">
+                <input name="is_checklog" type="checkbox">
+                {{ t('checklog_label') }}
+            </label>
+
+            <label for="cabrillo_file" style="margin-top:1.25rem">{{ t('cabrillo_file') }}</label>
+            <input id="cabrillo_file" name="cabrillo_file" type="file" accept=".log,.txt,.cbr" style="padding:.4rem">
+
+            <label for="cabrillo_text">{{ t('or_paste_cabrillo') }}</label>
+            <textarea id="cabrillo_text" name="cabrillo_text" rows="8" placeholder="Wklej pełny tekst Cabrillo (jeśli nie wgrywasz pliku)"
+                      style="font-family: 'Cascadia Code', monospace; font-size:.82rem"></textarea>
+
+            <label style="display:flex;align-items:center;gap:.5rem;margin-top:1rem;font-weight:500">
+                <input name="declaration_accepted" type="checkbox" required>
+                {{ t('declaration') }}
+            </label>
+
+            <div class="btn-group">
+                <button type="submit">{{ t('upload_score') }}</button>
+            </div>
+        </form>
+    {% endif %}
+</section>
+{% endblock %}

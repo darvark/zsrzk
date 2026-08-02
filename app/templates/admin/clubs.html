@@ -1,0 +1,76 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Kluby</h2>
+        <p class="muted">Przegląd zgłoszonych klubów wraz z filtrowaniem i obsługą akceptacji.</p>
+    </div>
+    <div class="surface-note muted">Oczekujące akceptacje: {{ pending_count }}</div>
+</div>
+
+<section class="card">
+    <form method="get" class="filter-form">
+        <div>
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Oczekujące</option>
+                <option value="approved" {% if selected_status == 'approved' %}selected{% endif %}>Zaakceptowane</option>
+                <option value="all" {% if selected_status == 'all' %}selected{% endif %}>Wszystkie</option>
+            </select>
+        </div>
+        <div class="btn-group">
+            <button type="submit">Zastosuj filtr</button>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    {% if clubs %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nazwa</th>
+                        <th>Status</th>
+                        <th>Opis</th>
+                        <th>Utworzono</th>
+                        <th>Zaakceptowano</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for club in clubs %}
+                    <tr>
+                        <td>{{ club.id }}</td>
+                        <td><a href="{{ url_for('main.club_detail', club_id=club.id) }}">{{ club.name }}</a></td>
+                        <td>
+                            {% if club.is_approved %}
+                                <span class="badge badge-accepted">Zaakceptowany</span>
+                            {% else %}
+                                <span class="badge badge-pending">Oczekujący</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ club.description or '—' }}</td>
+                        <td>{{ club.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ club.approved_at.strftime('%Y-%m-%d %H:%M') if club.approved_at else '—' }}</td>
+                        <td>
+                            {% if not club.is_approved %}
+                                <form method="post" action="{{ url_for('admin.approve_club', club_id=club.id) }}" class="inline-action">
+                                    <button type="submit" class="btn-sm">Akceptuj</button>
+                                </form>
+                            {% else %}
+                                <span class="muted">Zaakceptowany</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="muted">Brak klubów dla wybranego filtra.</p>
+    {% endif %}
+</section>
+{% endblock %}

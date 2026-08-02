@@ -1,0 +1,58 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Kontrola dostępu</p>
+        <h1>Użytkownicy administratora</h1>
+        <p class="lead">Twórz i przeglądaj konta, które mogą logować się do panelu administracyjnego.</p>
+    </div>
+</div>
+
+<section class="card">
+    <h3>Utwórz konto administratora</h3>
+    <form method="post" class="form-grid">
+        <label>
+            Nazwa użytkownika
+            <input name="username" autocomplete="username" required>
+        </label>
+        <label>
+            Hasło
+            <input name="password" type="password" autocomplete="new-password" required>
+        </label>
+        <label>
+            Potwierdź hasło
+            <input name="confirm_password" type="password" autocomplete="new-password" required>
+        </label>
+        <div>
+            <button type="submit" class="button">Utwórz administratora</button>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    <h3>Istniejące konta administratorów</h3>
+    {% if users %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Nazwa użytkownika</th>
+                    <th>Utworzono</th>
+                    <th>Ostatnie logowanie</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td><strong>{{ user.username }}</strong></td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ user.last_login_at.strftime('%Y-%m-%d %H:%M') if user.last_login_at else 'Nigdy' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="muted">Nie utworzono jeszcze kont administratora.</p>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="admin-page-title">
+    <h2>Panel</h2>
+    <p class="muted">Przegląd aktywności, statusów i ostatnich zgłoszeń w całym systemie.</p>
+</div>
+
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ contest_count }}</div>
+        <div class="stat-label">Zawody</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ edition_count }}</div>
+        <div class="stat-label">Edycje</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ log_count }}</div>
+        <div class="stat-label">Logi</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ qso_count }}</div>
+        <div class="stat-label">Pozycje QSO</div>
+    </div>
+</div>
+
+<section class="card">
+    <h3>Statusy edycji</h3>
+    {% if edition_status_counts %}
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Status</th><th>Liczba</th></tr></thead>
+                <tbody>
+                    {% for status, count in edition_status_counts.items() %}
+                    <tr>
+                        <td><span class="badge badge-{{ status }}">{{ status_pl(status) }}</span></td>
+                        <td>{{ count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="muted">Brak edycji.</p>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h3>Statusy zgłoszeń logów</h3>
+    {% if log_status_counts %}
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Status</th><th>Liczba</th></tr></thead>
+                <tbody>
+                    {% for status, count in log_status_counts.items() %}
+                    <tr>
+                        <td><span class="badge badge-{{ status }}">{{ status_pl(status) }}</span></td>
+                        <td>{{ count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="muted">Brak logów.</p>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h3>Ostatnie logi</h3>
+    {% if recent_logs %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Callsign</th>
+                        <th>Edycja</th>
+                        <th>Wynik</th>
+                        <th>Status</th>
+                        <th>Wgrano</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_logs %}
+                    <tr>
+                        <td>{{ log.id }}</td>
+                        <td><strong>{{ log.station_call or '—' }}</strong></td>
+                        <td><a href="{{ url_for('main.edition_detail', edition_id=log.edition_id) }}">{{ log.edition.display_name }}</a></td>
+                        <td>{{ log.computed_score }}</td>
+                        <td><span class="badge badge-{{ log.submission_status }}">{{ log.submission_status }}</span></td>
+                        <td>{{ log.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td><a href="{{ url_for('admin.edit_log', log_id=log.id) }}">Edytuj</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="muted">Brak wgranych logów.</p>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Odebrane logi{% endblock %}
+
+{% block content %}
+<div class="page-header"><h2>Odebrane logi</h2></div>
+
+<section class="card">
+    <form method="get" style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end">
+        <div>
+            <label for="contest_id" style="font-size:.82rem">Zawody</label>
+            <select id="contest_id" name="contest_id" style="min-width:180px">
+                <option value="">Wszystkie zawody</option>
+                {% for contest in contests %}
+                    <option value="{{ contest.id }}" {% if selected_contest_id == contest.id %}selected{% endif %}>
+                        {{ contest.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="edition_id" style="font-size:.82rem">Edycja</label>
+            <select id="edition_id" name="edition_id" style="min-width:200px">
+                <option value="">Wszystkie edycje</option>
+                {% for edition in editions %}
+                    <option value="{{ edition.id }}" {% if selected_edition_id == edition.id %}selected{% endif %}>
+                        {{ edition.contest.name }} {{ edition.year }}{% if edition.name %} - {{ edition.name }}{% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="status" style="font-size:.82rem">Status</label>
+            <select id="status" name="status">
+                <option value="all" {% if selected_status == 'all' %}selected{% endif %}>Wszystkie</option>
+                <option value="accepted" {% if selected_status == 'accepted' %}selected{% endif %}>Zaakceptowane</option>
+                <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Odrzucone</option>
+                <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Oczekujące</option>
+            </select>
+        </div>
+        <div>
+            <label for="callsign" style="font-size:.82rem">Callsign</label>
+            <input id="callsign" name="callsign" type="text" value="{{ callsign }}" placeholder="e.g. SP9" style="width:120px">
+        </div>
+        <button type="submit" style="margin-top:1.5rem">Filtruj</button>
+        <a href="{{ url_for('main.logs_received') }}" class="button btn-secondary" style="margin-top:1.5rem">Resetuj</a>
+    </form>
+    <p class="muted" style="margin-top:.75rem;margin-bottom:0">
+        {% for status_name, count in status_counts %}
+            <span class="badge badge-{{ status_name }}" style="margin-right:.35rem">{{ status_name }} ({{ count }})</span>
+        {% endfor %}
+    </p>
+</section>
+
+<section class="card">
+    {% if logs %}
+        <p class="muted">Wyświetlono {{ logs|length }} log(ów).</p>
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Zgłoszono</th>
+                    <th>Edycja</th>
+                    <th>Callsign</th>
+                    <th>Status</th>
+                    <th>Kategoria</th>
+                    <th>Klub</th>
+                    <th>Wynik</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="muted">{{ log.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ log.edition.contest.name }} {{ log.edition.year }}</td>
+                    <td><strong>{{ log.station_call or '—' }}</strong></td>
+                    <td><span class="badge badge-{{ log.submission_status }}">{{ status_pl(log.submission_status) }}</span></td>
+                    <td>{{ log.category.name if log.category else '—' }}</td>
+                    <td>{{ log.club.name if log.club else '—' }}</td>
+                    <td><strong>{{ log.computed_score }}</strong></td>
+                    <td><a href="{{ url_for('main.log_detail', log_id=log.id) }}">Podgląd</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📢</div>
+            <p>Brak logów spełniających bieżące filtry.</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

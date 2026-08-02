@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}{{ contest.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="breadcrumb">
+            <a href="{{ url_for('main.contests') }}">Zawody</a>
+            <span class="sep">/</span>
+            {{ contest.name }}
+        </div>
+        <h2>{{ contest.name }}</h2>
+        {% if contest.description %}<p class="muted">{{ contest.description }}</p>{% endif %}
+        <p class="muted">Cykliczność: {{ 'Co roku' if contest.is_yearly_recurring else 'Niestandardowy harmonogram' }}</p>
+    </div>
+    <div class="btn-group mt-0">
+        <a href="{{ url_for('main.contest_summary', contest_id=contest.id) }}" class="button btn-secondary">Podsumowanie punktacji</a>
+    </div>
+</div>
+
+<section class="card">
+    <h3>Edycje roczne</h3>
+    {% if edition_stats %}
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Edycja</th>
+                    <th>Status</th>
+                    <th>Logi</th>
+                    <th>Suma punktów</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for edition, log_count, score_sum in edition_stats %}
+                <tr>
+                    <td><strong>{{ edition.display_name }}</strong></td>
+                    <td><span class="badge badge-{{ edition.status }}">{{ edition.status_label }}</span></td>
+                    <td>{{ log_count }}</td>
+                    <td>{{ score_sum }}</td>
+                    <td>
+                        <a href="{{ url_for('main.edition_detail', edition_id=edition.id) }}">Reguły</a>
+                        &nbsp;·&nbsp;
+                        <a href="{{ url_for('main.upload_log', edition_id=edition.id) }}">Wgrywanie</a>
+                        &nbsp;·&nbsp;
+                        <a href="{{ url_for('main.logs_received', edition_id=edition.id) }}">Logi</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <p>Brak edycji rocznych.</p>
+        </div>
+    {% endif %}
+</section>
+
+{% if can_manage %}
+<section class="card">
+    <h3>Notatki regulaminowe</h3>
+    <p class="muted">Przechowuj oficjalne reguły, linki i notatki w aplikacji.</p>
+    {% if contest.rule_notes %}
+        {% for note in contest.rule_notes %}
+        <div style="border-left:3px solid var(--clr-border);padding:.6rem .9rem;margin-bottom:.75rem;border-radius:0 var(--radius-sm) var(--radius-sm) 0">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+                <div>
+                    <strong>{{ note.title }}</strong>
+                    <span class="muted" style="margin-left:.5rem">{{ note.created_at.strftime('%Y-%m-%d') }}</span>
+                    <p style="margin:.35rem 0 0">{{ note.content }}</p>
+                </div>
+                <form method="post" action="{{ url_for('main.delete_rule_note', contest_id=contest.id, note_id=note.id) }}"
+                                            onsubmit="return confirm('Usunąć tę notatkę regulaminową?')" style="margin:0">
+                                        <button class="danger btn-sm" type="submit" style="margin-top:0">Usuń</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="muted">Brak zapisanych notatek regulaminowych.</p>
+    {% endif %}
+
+    <hr style="border:none;border-top:1px solid var(--clr-border);margin:1rem 0">
+    <h4>Dodaj notatkę regulaminową</h4>
+    <form method="post" action="{{ url_for('main.add_rule_note', contest_id=contest.id) }}">
+        <div class="form-grid">
+            <div>
+                <label for="title">Tytuł</label>
+                <input id="title" name="title" type="text" placeholder="np. Warunki uczestnictwa" required>
+            </div>
+        </div>
+        <label for="content">Treść</label>
+        <textarea id="content" name="content" rows="3" placeholder="Opisz oficjalne reguły zawodów lub odnośniki" required></textarea>
+        <div class="btn-group">
+            <button type="submit">Zapisz notatkę</button>
+        </div>
+    </form>
+</section>
+{% endif %}
+{% endblock %}

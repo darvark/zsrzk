@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="card">
+    <h2>{{ t('clubs_title') }}</h2>
+    <p class="muted">{{ t('clubs_intro') }}</p>
+    <form method="post">
+        <label for="name">{{ t('club_name') }}</label>
+        <input id="name" name="name" type="text" required>
+
+        <label for="description">{{ t('description') }}</label>
+        <input id="description" name="description" type="text" placeholder="{{ t('optional') }}">
+
+        <button type="submit">{{ t('clubs_create') }}</button>
+    </form>
+</section>
+
+<section class="card">
+    {% if clubs %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Club</th>
+                    <th>{{ t('status') }}</th>
+                    <th>{{ t('description') }}</th>
+                    <th>{{ t('members') }}</th>
+                    <th>{{ t('logs') }}</th>
+                    <th>{{ t('details') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for club in clubs %}
+                    <tr>
+                        <td>{{ club.name }}</td>
+                        <td>
+                            {% if club.is_approved %}
+                                <span class="badge badge-accepted">{{ t('approved') }}</span>
+                            {% else %}
+                                <span class="badge badge-pending">{{ t('pending_approval') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ club.description or '' }}</td>
+                        <td>{{ club.members|length }}</td>
+                        <td>{{ club.logs|length }}</td>
+                        <td><a href="{{ url_for('main.club_detail', club_id=club.id) }}">{{ t('open') }}</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>{{ t('no_clubs') }}</p>
+    {% endif %}
+</section>
+{% endblock %}

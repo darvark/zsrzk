@@ -1,0 +1,89 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="admin-page-title">
+    <h2>Edytuj log #{{ log.id }} — {{ log.station_call or 'Nieznany' }}</h2>
+    <p class="muted">Inspekcja zgłoszenia, statusu punktacji i danych operatora z jednego miejsca.</p>
+</div>
+
+<section class="card">
+    <dl class="details-grid">
+        <dt>Zawody</dt><dd>{{ log.contest.name }}</dd>
+        <dt>Edycja</dt><dd><a href="{{ url_for('main.edition_detail', edition_id=log.edition_id) }}">{{ log.edition.display_name }}</a></dd>
+        <dt>Operator</dt><dd>{{ log.operator or '—' }}</dd>
+        <dt>Email</dt><dd>{{ log.submitter_email or '—' }}</dd>
+        <dt>Location</dt><dd>{{ log.location or '—' }}</dd>
+        <dt>Grid</dt><dd>{{ log.grid_locator or '—' }}</dd>
+        <dt>Power</dt><dd>{{ log.power_category or '—' }}</dd>
+        <dt>Operators #</dt><dd>{{ log.operators_count or '—' }}</dd>
+        <dt>Wynik deklarowany</dt><dd>{{ log.claimed_score or '—' }}</dd>
+        <dt>Wynik obliczony</dt><dd><strong>{{ log.computed_score }}</strong></dd>
+        <dt>Poprawne QSO</dt><dd>{{ log.valid_qso_count }}</dd>
+        <dt>Niepoprawne QSO</dt><dd>{{ log.invalid_qso_count }}</dd>
+        <dt>Wgrano</dt><dd>{{ log.uploaded_at.strftime('%Y-%m-%d %H:%M UTC') }}</dd>
+    </dl>
+</section>
+
+<section class="card">
+    <h3>Metadane i status</h3>
+    <form method="post">
+        <input type="hidden" name="action" value="save">
+
+        <label for="submission_status">Status zgłoszenia</label>
+        <select id="submission_status" name="submission_status">
+            {% for val in ['accepted', 'rejected', 'pending', 'checklog'] %}
+                <option value="{{ val }}" {% if log.submission_status == val %}selected{% endif %}>{{ status_pl(val) }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="category_id">Kategoria uczestnika</label>
+        <select id="category_id" name="category_id">
+            <option value="">— None —</option>
+            {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if log.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="is_checklog" {% if log.is_checklog %}checked{% endif %}>
+            Oznacz jako checklog (wykluczony z punktacji)
+        </label>
+
+        <label for="submission_notes">Notatki administratora</label>
+        <textarea id="submission_notes" name="submission_notes" rows="2">{{ log.submission_notes or '' }}</textarea>
+
+        <div class="form-actions">
+            <button type="submit">Zapisz zmiany</button>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    <h3>Przelicz ponownie</h3>
+    <p>Ponownie uruchom reguły punktacji dla tego logu i zaktualizuj poprawność QSO oraz wynik.</p>
+    <form method="post">
+        <input type="hidden" name="action" value="rescore">
+        <button type="submit" class="btn-warning">Przelicz log</button>
+    </form>
+</section>
+
+<section class="card">
+    <h3>Podsumowanie kontroli</h3>
+    <p>Wygeneruj tekstowy raport punktacji i wyślij go do zgłaszającego log.</p>
+    <a href="{{ url_for('admin.log_check_summary', log_id=log.id) }}" class="button">Podgląd i wysyłka podsumowania</a>
+</section>
+
+<section class="card">
+    <h3>Surowy Cabrillo</h3>
+    <pre class="preformatted-block compact">{{ log.raw_text }}</pre>
+</section>
+
+<section class="card card-danger">
+    <h3>Strefa niebezpieczna</h3>
+    <p>Trwale usuń ten log i wszystkie {{ log.qsos | length }} pozycje QSO.</p>
+    <form method="post" action="{{ url_for('admin.delete_log', log_id=log.id) }}"
+          onsubmit="return confirm('Trwale usunąć log #{{ log.id }} ({{ log.station_call or '?' }})?')">
+        <button type="submit" class="btn-danger">Usuń log</button>
+    </form>
+</section>
+{% endblock %}

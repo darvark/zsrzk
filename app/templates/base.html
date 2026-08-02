@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="{{ ui_lang }}" data-theme="{{ ui_theme }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Rozliczanie zawodów{% endblock %} – System AR</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<header class="site-header">
+    <div class="header-inner">
+        <a class="site-logo" href="{{ url_for('main.index') }}">
+            <img src="{{ url_for('static', filename='favicon.svg') }}" alt="Logo">
+            <span class="site-logo-text">SP&nbsp;<span>Zawody</span>&nbsp;KF</span>
+        </a>
+        <nav>
+            <a href="{{ url_for('main.contests') }}">{{ t('nav_contests') }}</a>
+            <a href="{{ url_for('main.upload_log') }}">{{ t('nav_upload_log') }}</a>
+            <a href="{{ url_for('main.logs_received') }}">{{ t('nav_logs') }}</a>
+            <a href="{{ url_for('main.certificates_lookup') }}">{{ t('nav_certificates') }}</a>
+            <a href="{{ url_for('main.clubs_home') }}">{{ t('nav_clubs') }}</a>
+            <div class="nav-right">
+                {% if current_admin_user %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="nav-admin">{{ t('nav_admin') }}</a>
+                {% else %}
+                    <a href="{{ url_for('admin.login') }}" class="nav-admin">{{ t('nav_admin_login') }}</a>
+                {% endif %}
+                <span class="nav-meta">{{ t('theme') }}:</span>
+                <a href="{{ ui_url(theme='light') }}" class="nav-chip {% if ui_theme == 'light' %}active{% endif %}">{{ t('theme_light') }}</a>
+                <a href="{{ ui_url(theme='dark') }}" class="nav-chip {% if ui_theme == 'dark' %}active{% endif %}">{{ t('theme_dark') }}</a>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-list">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+    {{ t('site_footer') }} &nbsp;·&nbsp; {{ now.year if now is defined else 2026 }}
+</footer>
+
+</body>
+</html>

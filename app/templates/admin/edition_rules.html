@@ -1,0 +1,55 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Reguły — {{ edition.display_name }}</h2>
+        <p class="muted">Edycja kluczy punktacji i walidacji dla wybranej edycji zawodów.</p>
+    </div>
+    <div class="action-bar mb-0">
+        <a href="{{ url_for('admin.edit_edition', edition_id=edition.id) }}" class="button btn-secondary">Powrót do edycji</a>
+        <a href="{{ url_for('main.edition_detail', edition_id=edition.id) }}" class="button btn-secondary">Strona publiczna</a>
+    </div>
+</div>
+
+<section class="card">
+    <p class="mb-0">
+        Potrzebujesz listy dozwolonych wartości i opisu działania reguł?
+        Zobacz <a href="{{ url_for('main.contest_rule_fields_help') }}">referencję pól reguł zawodów</a>.
+    </p>
+</section>
+
+<section class="card">
+    {% if edition.rules %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Value</th>
+                        <th>Opis</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rule in edition.rules %}
+                    <tr>
+                        <td><code>{{ rule.key }}</code></td>
+                        <td>
+                            <form method="post" action="{{ url_for('admin.update_rule', edition_id=edition.id, rule_id=rule.id) }}" class="inline-rule-form">
+                                <input name="value" type="text" value="{{ rule.value }}">
+                                <button type="submit" class="btn-sm">Zapisz</button>
+                            </form>
+                        </td>
+                        <td>
+                            <span class="muted">{{ rule.description or '' }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="muted">Brak reguł dla tej edycji.</p>
+    {% endif %}
+</section>
+{% endblock %}

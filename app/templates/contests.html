@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Zawody{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Zawody</h2>
+</div>
+
+{% if can_manage %}
+<section class="card">
+    <h3>Utwórz nowe zawody</h3>
+    <form method="post">
+        <div class="form-grid">
+            <div>
+                <label for="name">Nazwa zawodów</label>
+                <input id="name" name="name" type="text" required placeholder="np. SP DX Contest">
+            </div>
+            <div>
+                <label for="first_edition_year">Rok pierwszej edycji</label>
+                <input id="first_edition_year" name="first_edition_year" type="number" min="1900" max="3000" placeholder="e.g. 2026">
+            </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:.5rem;margin-top:.75rem;font-weight:500">
+            <input name="is_yearly_recurring" type="checkbox" checked>
+            Zawody odbywają się co roku
+        </label>
+        <label for="description">Opis</label>
+        <textarea id="description" name="description" rows="2" placeholder="Short description of the contest"></textarea>
+        <div class="btn-group">
+            <button type="submit">Utwórz zawody</button>
+        </div>
+    </form>
+</section>
+{% endif %}
+
+<section class="card">
+    <h3>Istniejące zawody</h3>
+    {% if contests %}
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nazwa</th>
+                    <th>Edycje</th>
+                    <th>Cykliczność</th>
+                    <th>Opis</th>
+                    <th>Utworzono</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contest in contests %}
+                <tr>
+                    <td><a href="{{ url_for('main.contest_detail', contest_id=contest.id) }}"><strong>{{ contest.name }}</strong></a></td>
+                    <td>{{ contest.editions|length }}</td>
+                    <td class="muted">{{ 'Coroczne' if contest.is_yearly_recurring else 'Niestandardowy harmonogram' }}</td>
+                    <td class="muted">{{ contest.description or '—' }}</td>
+                    <td class="muted">{{ contest.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        <a href="{{ url_for('main.contest_detail', contest_id=contest.id) }}">Zarządzaj</a>
+                        &nbsp;·&nbsp;
+                        <a href="{{ url_for('main.contest_summary', contest_id=contest.id) }}">Podsumowanie</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📡</div>
+            <p>Brak zawodów.</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

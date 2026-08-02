@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="card">
+    <h2>{{ club.name }}</h2>
+    {% if club.description %}<p>{{ club.description }}</p>{% endif %}
+</section>
+
+<section class="card">
+    <h3>Import listy uprawnionych</h3>
+    <p class="muted">Jeden członek w linii jako ZNAK lub ZNAK,Nazwisko operatora.</p>
+    <form method="post" action="{{ url_for('main.import_club_members', club_id=club.id) }}">
+        <textarea name="member_list" rows="8" placeholder="SP9ABC,John Doe&#10;K1XYZ"></textarea>
+        <button type="submit">Importuj członków</button>
+    </form>
+</section>
+
+<section class="card">
+    <h3>Członkowie</h3>
+    {% if club.members %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Znak</th>
+                    <th>Operator</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in club.members %}
+                    <tr>
+                        <td>{{ member.callsign }}</td>
+                        <td>{{ member.operator_name or '' }}</td>
+                        <td>
+                            <form method="post" action="{{ url_for('main.delete_club_member', club_id=club.id, member_id=member.id) }}" onsubmit="return confirm('Usunąć tego członka?');">
+                                <button class="danger" type="submit">Usuń</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Brak członków w tym klubie.</p>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h3>Zbiorczy wynik klubu wg edycji</h3>
+    {% if score_rows %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Edycja</th>
+                    <th>Logi</th>
+                    <th>Suma punktów</th>
+                    <th>Podsumowanie</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for edition, log_count, score_sum in score_rows %}
+                    <tr>
+                        <td>{{ edition.contest.name }} {{ edition.year }}</td>
+                        <td>{{ log_count }}</td>
+                        <td>{{ score_sum }}</td>
+                        <td><a href="{{ url_for('main.contest_summary', contest_id=edition.contest_id) }}">Otwórz podsumowanie</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Brak logów powiązanych z klubem.</p>
+    {% endif %}
+</section>
+{% endblock %}

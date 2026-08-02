@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="card">
+    <h2>{{ contest.name }} - Podsumowanie punktacji</h2>
+    <form method="get">
+        <label for="category">Filtruj po kategorii uczestnika</label>
+        <select id="category" name="category">
+            <option value="all" {% if selected_category_filter == 'all' %}selected{% endif %}>Wszystkie kategorie</option>
+            <option value="__uncategorized__" {% if selected_category_filter == '__uncategorized__' %}selected{% endif %}>Bez kategorii</option>
+            {% for category_name in category_names %}
+                <option value="{{ category_name }}" {% if selected_category_filter == category_name %}selected{% endif %}>{{ category_name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Zastosuj filtr</button>
+    </form>
+
+    <p>
+        <strong>Bieżący widok:</strong>
+        {% if selected_category_filter == 'all' %}
+            Wszystkie kategorie
+        {% elif selected_category_filter == '__uncategorized__' %}
+            Bez kategorii
+        {% else %}
+            {{ selected_category_filter }}
+        {% endif %}
+    </p>
+
+    <p><strong>Łącznie sklasyfikowanych logów:</strong> {{ overall.logs }}</p>
+    <p><strong>Łączny wynik:</strong> {{ overall.score_sum }}</p>
+    <p><strong>Łącznie poprawnych QSO:</strong> {{ overall.valid_qsos }}</p>
+    <p><strong>Łącznie niepoprawnych QSO:</strong> {{ overall.invalid_qsos }}</p>
+    <p class="muted">W podsumowaniu i klasyfikacji uwzględnione są tylko zaakceptowane logi, bez checklogów.</p>
+</section>
+
+<section class="card">
+    <h3>Podział na edycje</h3>
+    {% if edition_rows %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Edycja</th>
+                    <th>Logi</th>
+                    <th>Suma punktów</th>
+                    <th>Średni wynik</th>
+                    <th>Poprawne QSO</th>
+                    <th>Niepoprawne QSO</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for edition, log_count, score_sum, score_avg, valid_qsos, invalid_qsos in edition_rows %}
+                    <tr>
+                        <td>{{ edition.display_name }}</td>
+                        <td>{{ log_count }}</td>
+                        <td>{{ score_sum|int }}</td>
+                        <td>{{ score_avg|round(2) }}</td>
+                        <td>{{ valid_qsos|int }}</td>
+                        <td>{{ invalid_qsos|int }}</td>
+                        <td>
+                            <a href="{{ url_for('main.edition_detail', edition_id=edition.id) }}">Reguły</a>
+                            <a href="{{ url_for('main.upload_log', edition_id=edition.id) }}">Wgraj log</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Brak dostępnych edycji dla tych zawodów.</p>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h3>Klasyfikacja wg kategorii</h3>
+    {% if classification_groups %}
+        {% for group in classification_groups %}
+            <div class="mb-0">
+                <h4>{{ group.edition.display_name }} - {{ group.category_label }}</h4>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Miejsce</th>
+                                <th>Callsign</th>
+                                <th>Operator</th>
+                                <th>Wynik</th>
+                                <th>Poprawne QSO</th>
+                                <th>Niepoprawne QSO</th>
+                                <th>Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in group.rows %}
+                                <tr>
+                                    <td><strong>{{ row.rank }}</strong></td>
+                                    <td>{{ row.log.station_call or '—' }}</td>
+                                    <td>{{ row.log.operator or '—' }}</td>
+                                    <td>{{ row.log.computed_score }}</td>
+                                    <td>{{ row.log.valid_qso_count }}</td>
+                                    <td>{{ row.log.invalid_qso_count }}</td>
+                                    <td><a href="{{ url_for('main.log_detail', log_id=row.log.id) }}">Szczegóły logu</a></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>Brak sklasyfikowanych logów dla wybranego widoku.</p>
+    {% endif %}
+</section>
+{% endblock %}

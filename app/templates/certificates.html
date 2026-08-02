@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="card">
+    <h2>Dyplomy</h2>
+    <form method="get">
+        <label for="callsign">Znak</label>
+        <input id="callsign" name="callsign" type="text" value="{{ callsign }}" placeholder="Podaj znak użyty w zawodach" required>
+        <button type="submit">Znajdź dyplomy</button>
+    </form>
+</section>
+
+<section class="card">
+    {% if callsign and not eligible_logs %}
+        <p>Brak pozycji kwalifikujących się do dyplomu dla tego znaku.</p>
+    {% endif %}
+
+    {% if eligible_logs %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Zawody</th>
+                    <th>Edycja</th>
+                    <th>Kategoria</th>
+                    <th>Wynik</th>
+                    <th>Miejsce</th>
+                    <th>Formaty</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in eligible_logs %}
+                    <tr>
+                        <td>{{ log.contest.name }}</td>
+                        <td>{{ log.edition.display_name }}</td>
+                        <td>{{ log.category.name if log.category else 'brak' }}</td>
+                        <td>{{ log.computed_score }}</td>
+                        <td>{{ log_ranks[log.id] if log_ranks[log.id] is not none else 'brak' }}</td>
+                        <td>
+                            <a href="{{ url_for('main.certificate_download', log_id=log.id, fmt='txt') }}">TXT</a>
+                            <a href="{{ url_for('main.certificate_download', log_id=log.id, fmt='svg') }}">SVG</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</section>
+{% endblock %}

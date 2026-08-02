@@ -1,0 +1,55 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Zawody</h2>
+        <p class="muted">Lista konkursów wraz z liczbą edycji i szybkimi przejściami do konfiguracji.</p>
+    </div>
+    <a href="{{ url_for('main.contests') }}" class="button">+ Nowe zawody</a>
+</div>
+
+<section class="card">
+    {% if contests %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nazwa</th>
+                        <th>Edycje</th>
+                        <th>Cykliczność</th>
+                        <th>Opis</th>
+                        <th>Utworzono</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contest in contests %}
+                    <tr>
+                        <td>{{ contest.id }}</td>
+                        <td><a href="{{ url_for('main.contest_detail', contest_id=contest.id) }}">{{ contest.name }}</a></td>
+                        <td>{{ contest.editions | length }}</td>
+                        <td>{{ 'Coroczne' if contest.is_yearly_recurring else 'Niestandardowy harmonogram' }}</td>
+                        <td>{{ contest.description or '—' }}</td>
+                        <td>{{ contest.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <div class="table-actions">
+                                <a href="{{ url_for('admin.edit_contest', contest_id=contest.id) }}">Edytuj</a>
+                                <a href="{{ url_for('admin.editions', contest_id=contest.id) }}">Edycje</a>
+                                <form method="post" action="{{ url_for('admin.delete_contest', contest_id=contest.id) }}" class="inline-action"
+                                      onsubmit="return confirm('Usunąć zawody \'{{ contest.name }}\' wraz z wszystkimi edycjami, logami i QSO? Tej operacji nie można cofnąć.')">
+                                    <button type="submit" class="btn-danger btn-sm">Usuń</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="muted">Brak zawodów. <a href="{{ url_for('main.contests') }}">Utwórz nowe</a>.</p>
+    {% endif %}
+</section>
+{% endblock %}

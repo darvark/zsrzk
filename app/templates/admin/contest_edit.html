@@ -1,0 +1,66 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="admin-page-title">
+    <h2>Edytuj zawody #{{ contest.id }}</h2>
+    <p class="muted">Aktualizacja danych konkursu oraz szybki dostęp do jego edycji.</p>
+</div>
+
+<section class="card">
+    <form method="post">
+        <label for="name">Nazwa zawodów</label>
+        <input id="name" name="name" type="text" value="{{ contest.name }}" required>
+
+        <label for="description">Opis</label>
+        <textarea id="description" name="description" rows="3">{{ contest.description or '' }}</textarea>
+
+        <label class="checkbox-row">
+            <input name="is_yearly_recurring" type="checkbox" {% if contest.is_yearly_recurring %}checked{% endif %}>
+            Zawody odbywają się co roku
+        </label>
+
+        <div class="form-actions">
+            <button type="submit">Zapisz zmiany</button>
+            <a href="{{ url_for('admin.contests') }}" class="button btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    <h3>Edycje</h3>
+    {% if contest.editions %}
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Rok</th><th>Nazwa</th><th>Status</th><th>Logi</th><th></th></tr></thead>
+                <tbody>
+                    {% for edition in contest.editions %}
+                    <tr>
+                        <td>{{ edition.year }}</td>
+                        <td>{{ edition.name or '—' }}</td>
+                        <td><span class="badge badge-{{ edition.status }}">{{ edition.status_label }}</span></td>
+                        <td>{{ edition.logs | length }}</td>
+                        <td>
+                            <div class="table-actions">
+                                <a href="{{ url_for('admin.edit_edition', edition_id=edition.id) }}">Edytuj</a>
+                                <a href="{{ url_for('admin.edition_rules', edition_id=edition.id) }}">Reguły</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="muted">Brak edycji.</p>
+    {% endif %}
+</section>
+
+<section class="card card-danger">
+    <h3>Strefa niebezpieczna</h3>
+    <p>Trwale usuń te zawody oraz <strong>wszystkie</strong> ich edycje, logi, QSO i wyniki.</p>
+    <form method="post" action="{{ url_for('admin.delete_contest', contest_id=contest.id) }}"
+          onsubmit="return confirm('Trwale usunąć \'{{ contest.name }}\' wraz z całą zawartością?')">
+        <button type="submit" class="btn-danger">Usuń zawody</button>
+    </form>
+</section>
+{% endblock %}

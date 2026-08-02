@@ -1,0 +1,72 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Edycje</h2>
+        <p class="muted">Zarządzanie rocznikami zawodów, ich statusem publikacji i terminami przyjmowania logów.</p>
+    </div>
+    {% if contests %}
+        <form method="get" class="filter-form">
+            <div>
+                <label for="contest_id">Filtruj po zawodach</label>
+            <select id="contest_id" name="contest_id" onchange="this.form.submit()">
+                <option value="">Wszystkie</option>
+                {% for c in contests %}
+                    <option value="{{ c.id }}" {% if selected_contest_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+            </div>
+        </form>
+    {% endif %}
+</div>
+
+<section class="card">
+    {% if editions %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Zawody</th>
+                        <th>Rok</th>
+                        <th>Nazwa</th>
+                        <th>Status</th>
+                        <th>Start</th>
+                        <th>Termin</th>
+                        <th>Logi</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for edition in editions %}
+                    <tr>
+                        <td>{{ edition.id }}</td>
+                        <td><a href="{{ url_for('main.contest_detail', contest_id=edition.contest_id) }}">{{ edition.contest.name }}</a></td>
+                        <td>{{ edition.year }}</td>
+                        <td>{{ edition.name or '—' }}</td>
+                        <td><span class="badge badge-{{ edition.status }}">{{ edition.status_label }}</span></td>
+                        <td>{{ edition.submission_open_at.strftime('%Y-%m-%d %H:%M') if edition.submission_open_at else '—' }}</td>
+                        <td>{{ edition.submission_deadline.strftime('%Y-%m-%d %H:%M') if edition.submission_deadline else '—' }}</td>
+                        <td>{{ edition.logs | length }}</td>
+                        <td>
+                            <div class="table-actions">
+                                <a href="{{ url_for('admin.edit_edition', edition_id=edition.id) }}">Edytuj</a>
+                                <a href="{{ url_for('admin.edition_rules', edition_id=edition.id) }}">Reguły</a>
+                                <a href="{{ url_for('admin.logs', edition_id=edition.id) }}">Logi</a>
+                                <form method="post" action="{{ url_for('admin.delete_edition', edition_id=edition.id) }}" class="inline-action"
+                                      onsubmit="return confirm('Usunąć edycję \'{{ edition.display_name }}\' oraz wszystkie jej logi?')">
+                                    <button type="submit" class="btn-danger btn-sm">Usuń</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="muted">Nie znaleziono edycji.</p>
+    {% endif %}
+</section>
+{% endblock %}

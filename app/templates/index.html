@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Strona główna{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h2>Panel główny</h2>
+        <p class="muted mb-0">Przegląd wszystkich zawodów, ostatniej aktywności i opublikowanych wyników.</p>
+    </div>
+    <div class="btn-group mt-0">
+        <a href="{{ url_for('main.contests') }}" class="button">Przeglądaj zawody</a>
+        <a href="{{ url_for('main.upload_log') }}" class="button btn-secondary">Wgraj log</a>
+    </div>
+</div>
+
+<section class="card">
+    <h3>Zawody</h3>
+    {% if contests %}
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nazwa</th>
+                    <th>Edycje</th>
+                    <th>Opis</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contest in contests %}
+                <tr>
+                    <td><a href="{{ url_for('main.contest_detail', contest_id=contest.id) }}"><strong>{{ contest.name }}</strong></a></td>
+                    <td>{{ contest.editions|length }}</td>
+                    <td class="muted">{{ contest.description or '—' }}</td>
+                    <td>
+                        <a href="{{ url_for('main.contest_summary', contest_id=contest.id) }}">Podsumowanie</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📡</div>
+            <p>Brak zawodów. <a href="{{ url_for('main.contests') }}">Utwórz pierwsze</a>.</p>
+        </div>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h3>Ostatnio wgrane logi</h3>
+    {% if recent_logs %}
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Wgrano</th>
+                    <th>Edycja</th>
+                    <th>Callsign</th>
+                    <th>Kategoria</th>
+                    <th>Wynik</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_logs %}
+                <tr>
+                    <td class="muted">{{ log.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ log.contest.name }} {{ log.edition.year }}</td>
+                    <td><strong>{{ log.station_call or '—' }}</strong></td>
+                    <td>{{ log.category.name if log.category else '—' }}</td>
+                    <td><strong>{{ log.computed_score }}</strong></td>
+                    <td><span class="badge badge-{{ log.submission_status }}">{{ status_pl(log.submission_status) }}</span></td>
+                    <td><a href="{{ url_for('main.log_detail', log_id=log.id) }}">Podgląd</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📂</div>
+            <p>Brak wgranych logów.</p>
+        </div>
+    {% endif %}
+</section>
+
+{% endblock %}

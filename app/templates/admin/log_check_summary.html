@@ -1,0 +1,46 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Podsumowanie kontroli — {{ log.station_call or 'Log #' ~ log.id }}</h2>
+        <p class="muted">Raport gotowy do pobrania lub wysłania do zgłaszającego.</p>
+    </div>
+    <a href="{{ url_for('admin.edit_log', log_id=log.id) }}" class="button btn-secondary">Powrót do logu</a>
+</div>
+
+<section class="card">
+    <dl class="details-grid details-grid-compact">
+        <dt>Zawody</dt><dd>{{ log.contest.name }}</dd>
+        <dt>Edycja</dt><dd>{{ log.edition.display_name }}</dd>
+        <dt>Callsign</dt><dd><strong>{{ log.station_call or '—' }}</strong></dd>
+        <dt>Status</dt><dd><span class="badge badge-{{ log.submission_status }}">{{ status_pl(log.submission_status) }}</span></dd>
+        <dt>E-mail zgłaszającego</dt>
+        <dd>
+            {% if has_email %}
+                <a href="mailto:{{ log.submitter_email }}">{{ log.submitter_email }}</a>
+            {% else %}
+                <span class="muted">Brak adresu e-mail</span>
+            {% endif %}
+        </dd>
+    </dl>
+</section>
+
+<section class="card">
+    <div class="form-actions">
+        <a href="{{ url_for('admin.log_check_summary_download', log_id=log.id) }}"
+           class="button">Pobierz .txt</a>
+        {% if has_email %}
+            <a href="{{ mailto }}" class="button">
+                Wyślij przez klienta poczty ({{ log.submitter_email }})
+            </a>
+        {% else %}
+            <span class="muted">
+                Brak adresu e-mail — dodaj go w nagłówku Cabrillo lub edytuj log.
+            </span>
+        {% endif %}
+    </div>
+
+    <pre class="preformatted-block">{{ summary_text }}</pre>
+</section>
+{% endblock %}

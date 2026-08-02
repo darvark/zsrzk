@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}{{ edition.display_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="breadcrumb">
+            <a href="{{ url_for('main.contests') }}">Zawody</a>
+            <span class="sep">/</span>
+            <a href="{{ url_for('main.contest_detail', contest_id=edition.contest_id) }}">{{ edition.contest.name }}</a>
+            <span class="sep">/</span>
+            {{ edition.display_name }}
+        </div>
+        <h2>{{ edition.display_name }}</h2>
+        {% if edition.description %}<p class="muted">{{ edition.description }}</p>{% endif %}
+    </div>
+    <div style="text-align:right">
+        <span class="badge badge-{{ edition.status }}" style="font-size:.85rem;padding:.35rem 1rem">{{ edition.status_label }}</span><br>
+        <a href="{{ url_for('main.upload_log', edition_id=edition.id) }}" class="button btn-sm" style="margin-top:.5rem">Wgraj log</a>
+    </div>
+</div>
+
+<section class="card">
+    <div style="display:flex;gap:2rem;flex-wrap:wrap;font-size:.9rem">
+        <div><strong>Okno przyjmowania logów</strong><br>
+            <span class="muted">Start:</span> {{ edition.submission_open_at.strftime('%Y-%m-%d %H:%M') if edition.submission_open_at else 'Nie ustawiono' }}<br>
+            <span class="muted">Koniec:</span> {{ edition.submission_deadline.strftime('%Y-%m-%d %H:%M') if edition.submission_deadline else 'Nie ustawiono' }}
+        </div>
+        <div><strong>Przyjmowanie logów</strong><br>
+            <span class="badge badge-{{ 'accepted' if edition.can_accept_logs else 'rejected' }}">{{ 'Tak' if edition.can_accept_logs else 'Nie' }}</span>
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <h3>Cykl życia edycji</h3>
+    <form method="post" action="{{ url_for('main.update_edition_lifecycle', edition_id=edition.id) }}">
+        <label for="status">Status</label>
+        <select id="status" name="status" required>
+            <option value="draft" {% if edition.status == 'draft' %}selected{% endif %}>Szkic</option>
+            <option value="accepting_logs" {% if edition.status == 'accepting_logs' %}selected{% endif %}>Przyjmowanie logów</option>
+            <option value="submission_closed" {% if edition.status == 'submission_closed' %}selected{% endif %}>Nabór zamknięty</option>
+        </select>
+
+        <label for="submission_open_at">Początek przyjmowania</label>
+        <input id="submission_open_at" name="submission_open_at" type="datetime-local" value="{{ edition.submission_open_at.strftime('%Y-%m-%dT%H:%M') if edition.submission_open_at else '' }}">
+
+        <label for="submission_deadline">Termin końcowy</label>
+        <input id="submission_deadline" name="submission_deadline" type="datetime-local" value="{{ edition.submission_deadline.strftime('%Y-%m-%dT%H:%M') if edition.submission_deadline else '' }}">
+
+        <button type="submit">Zapisz cykl życia</button>
+    </form>
+</section>
+
+<section class="card">
+    <h3>Reguły punktacji dla edycji {{ edition.year }}</h3>
+    {% if edition.rules %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th>Opis</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rule in edition.rules %}
+                    <tr>
+                        <td>
+                            <input name="key" type="text" value="{{ rule.key }}" aria-label="Rule key for {{ rule.key }}" form="edit-rule-{{ rule.id }}" required>
+                        </td>
+                        <td>
+                            <input name="value" type="text" value="{{ rule.value }}" aria-label="Rule value for {{ rule.key }}" form="edit-rule-{{ rule.id }}" required>
+                        </td>
+                        <td>
+                            <input name="description" type="text" value="{{ rule.description or '' }}" aria-label="Opis reguły {{ rule.key }}" placeholder="Opis opcjonalny" form="edit-rule-{{ rule.id }}">
+                        </td>
+                        <td>
+                            <form class="inline-action inline-rule-form" id="edit-rule-{{ rule.id }}" method="post" action="{{ url_for('main.update_rule', edition_id=edition.id, rule_id=rule.id) }}">
+                                <button type="submit">Zastosuj</button>
+                            </form>
+                            <form class="inline-action" method="post" action="{{ url_for('main.delete_rule', edition_id=edition.id, rule_id=rule.id) }}" onsubmit="return confirm('Usunąć tę regułę?');">
+                                <button class="danger" type="submit">Usuń</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Brak zdefiniowanych reguł dla tej edycji.</p>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h3>Dodaj regułę</h3>
+    <p class="muted">Examples: <code>qso_points_cw=3</code>, <code>qso_points_ssb=1</code>, <code>qso_points_digi=2</code>, <code>multiplier_per_unique_band=1</code>, <code>premium_station_points=SP9ABC:5,K1TTT:10</code>.</p>
+    <form method="post">
+        <label for="key">Key</label>
+        <input id="key" name="key" type="text" placeholder="base_qso_points" required>
+
+        <label for="value">Value</label>
+        <input id="value" name="value" type="text" placeholder="1" required>
+
+        <label for="description">Opis</label>
+        <input id="description" name="description" type="text" placeholder="Co kontroluje ta reguła">
+
+        <button type="submit">Dodaj regułę</button>
+    </form>
+</section>
+
+<section class="card">
+    <h3>Kategorie uczestników</h3>
+    <p class="muted">Kategorie mogą różnić się między edycjami i mają charakter informacyjny (bez wpływu na punktację).</p>
+    {% if edition.categories %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Opis</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in edition.categories %}
+                    <tr>
+                        <td>{{ category.name }}</td>
+                        <td>{{ category.description or '' }}</td>
+                        <td>
+                            <form method="post" action="{{ url_for('main.delete_category', edition_id=edition.id, category_id=category.id) }}" onsubmit="return confirm('Usunąć tę kategorię uczestnika?');">
+                                <button class="danger" type="submit">Usuń</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Brak zdefiniowanych kategorii uczestników dla tej edycji.</p>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h3>Dodaj kategorię uczestnika</h3>
+    <form method="post" action="{{ url_for('main.add_category', edition_id=edition.id) }}">
+        <label for="cat_name">Nazwa kategorii</label>
+        <input id="cat_name" name="name" type="text" placeholder="Single Operator Low Power" required>
+
+        <label for="cat_description">Opis</label>
+        <input id="cat_description" name="description" type="text" placeholder="Opcjonalne ograniczenia lub notatki">
+
+        <button type="submit">Dodaj kategorię</button>
+    </form>
+</section>
+{% endblock %}

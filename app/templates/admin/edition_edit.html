@@ -1,0 +1,108 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="admin-page-title">
+    <h2>Edytuj edycję #{{ edition.id }} — {{ edition.display_name }}</h2>
+    <p class="muted">Konfiguracja terminu przyjmowania logów, publikacji oraz materiałów dyplomowych.</p>
+</div>
+
+<section class="card">
+    <form method="post">
+        <label for="year">Rok</label>
+        <input id="year" name="year" type="number" min="1900" max="3000" value="{{ edition.year }}" required>
+
+        <label for="name">Nazwa edycji (opcjonalnie)</label>
+        <input id="name" name="name" type="text" value="{{ edition.name or '' }}" placeholder="np. Edycja specjalna">
+
+        <label for="description">Opis</label>
+        <textarea id="description" name="description" rows="3">{{ edition.description or '' }}</textarea>
+
+        <label for="status">Status</label>
+        <select id="status" name="status">
+            {% set statuses = [
+                ('draft', 'Szkic'),
+                ('accepting_logs', 'Przyjmowanie logów'),
+                ('submission_closed', 'Nabór zamknięty'),
+            ] %}
+            {% for val, label in statuses %}
+                <option value="{{ val }}" {% if edition.status == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="submission_open_at">Start przyjmowania (czas lokalny)</label>
+        <input id="submission_open_at" name="submission_open_at" type="datetime-local"
+               value="{{ edition.submission_open_at.strftime('%Y-%m-%dT%H:%M') if edition.submission_open_at else '' }}">
+
+        <label for="submission_deadline">Termin końcowy (czas lokalny)</label>
+        <input id="submission_deadline" name="submission_deadline" type="datetime-local"
+               value="{{ edition.submission_deadline.strftime('%Y-%m-%dT%H:%M') if edition.submission_deadline else '' }}">
+
+        <div class="form-actions">
+            <button type="submit">Zapisz zmiany</button>
+            <a href="{{ url_for('admin.editions', contest_id=edition.contest_id) }}" class="button btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    <h3>Szybkie linki</h3>
+    <p class="link-row">
+        <a href="{{ url_for('main.edition_detail', edition_id=edition.id) }}">Publiczna strona edycji</a>
+        <a href="{{ url_for('admin.edition_rules', edition_id=edition.id) }}">Zarządzaj regułami</a>
+        <a href="{{ url_for('admin.logs', edition_id=edition.id) }}">Zobacz logi ({{ edition.logs | length }})</a>
+    </p>
+</section>
+
+<section class="card">
+    <h3>Szablon dyplomu</h3>
+    {% if edition.certificate_template %}
+        <p>
+            <strong>Aktualny szablon:</strong> {{ edition.certificate_template.original_filename }}
+            &nbsp;—&nbsp; wgrano {{ edition.certificate_template.uploaded_at.strftime('%Y-%m-%d %H:%M') }} UTC
+        </p>
+        <p class="muted">
+            SVG placeholders: <code>{{CALLSIGN}}</code> <code>{{SCORE}}</code> <code>{{RANK}}</code>
+            <code>{{CONTEST}}</code> <code>{{EDITION}}</code> <code>{{YEAR}}</code>
+            <code>{{CATEGORY}}</code> <code>{{ISSUED}}</code>
+        </p>
+        <div class="form-actions">
+            <form method="post"
+                  action="{{ url_for('admin.upload_cert_template', edition_id=edition.id) }}"
+                  enctype="multipart/form-data"
+                  class="inline-rule-form">
+                <input type="file" name="template_file" accept=".svg" required>
+                <button type="submit">Podmień szablon</button>
+            </form>
+            <form method="post"
+                  action="{{ url_for('admin.delete_cert_template', edition_id=edition.id) }}"
+                  onsubmit="return confirm('Usunąć szablon dyplomu dla tej edycji?')">
+                <button type="submit" class="btn-danger">Usuń szablon</button>
+            </form>
+        </div>
+    {% else %}
+        <p>Brak własnego szablonu. Dyplomy będą używać wbudowanego szablonu zapasowego.</p>
+        <p class="muted">
+            Wgraj plik SVG zawierający dowolne z poniższych placeholderów (zostaną podmienione przy pobraniu):
+            <code>{{CALLSIGN}}</code> <code>{{SCORE}}</code> <code>{{RANK}}</code>
+            <code>{{CONTEST}}</code> <code>{{EDITION}}</code> <code>{{YEAR}}</code>
+            <code>{{CATEGORY}}</code> <code>{{ISSUED}}</code>
+        </p>
+        <form method="post"
+              action="{{ url_for('admin.upload_cert_template', edition_id=edition.id) }}"
+              enctype="multipart/form-data"
+              class="inline-rule-form">
+            <input type="file" name="template_file" accept=".svg" required>
+            <button type="submit">Wgraj szablon</button>
+        </form>
+    {% endif %}
+</section>
+
+<section class="card card-danger">
+    <h3>Strefa niebezpieczna</h3>
+    <p>Trwale usuń tę edycję i <strong>wszystkie</strong> jej logi, QSO oraz wyniki.</p>
+    <form method="post" action="{{ url_for('admin.delete_edition', edition_id=edition.id) }}"
+          onsubmit="return confirm('Trwale usunąć edycję \'{{ edition.display_name }}\' wraz z całą zawartością?')">
+        <button type="submit" class="btn-danger">Usuń edycję</button>
+    </form>
+</section>
+{% endblock %}

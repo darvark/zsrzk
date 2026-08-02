@@ -1,0 +1,97 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="admin-page-title">
+    <h2>Logi</h2>
+    <p class="muted">Filtrowanie przesłanych logów według edycji, statusu i znaku wywoławczego.</p>
+</div>
+
+<section class="card">
+    <form method="get" class="filter-form">
+        <div>
+            <label for="edition_id">Edycja</label>
+            <select id="edition_id" name="edition_id">
+                <option value="">Wszystkie edycje</option>
+                {% for edition in editions %}
+                    <option value="{{ edition.id }}" {% if selected_edition_id == edition.id %}selected{% endif %}>
+                        {{ edition.contest.name }} {{ edition.year }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="all" {% if selected_status == 'all' %}selected{% endif %}>Wszystkie</option>
+                <option value="accepted" {% if selected_status == 'accepted' %}selected{% endif %}>Zaakceptowane</option>
+                <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Odrzucone</option>
+                <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Oczekujące</option>
+                <option value="checklog" {% if selected_status == 'checklog' %}selected{% endif %}>Checklog</option>
+            </select>
+        </div>
+        <div class="field-compact">
+            <label for="callsign">Callsign</label>
+            <input id="callsign" name="callsign" type="text" value="{{ callsign }}" placeholder="np. SP9ABC">
+        </div>
+        <div class="btn-group">
+            <button type="submit">Filtruj</button>
+            <a href="{{ url_for('admin.logs') }}" class="button btn-secondary">Resetuj</a>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    <p class="muted">Wyświetlono {{ logs | length }} log(ów).</p>
+    {% if logs %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Callsign</th>
+                        <th>Edycja</th>
+                        <th>Kategoria</th>
+                        <th>Wynik</th>
+                        <th>QSOs (V/I)</th>
+                        <th>Status</th>
+                        <th>Checklog</th>
+                        <th>Wgrano</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.id }}</td>
+                        <td><strong>{{ log.station_call or '—' }}</strong></td>
+                        <td>
+                            <a href="{{ url_for('main.edition_detail', edition_id=log.edition_id) }}">
+                                {{ log.edition.contest.name }} {{ log.edition.year }}
+                            </a>
+                        </td>
+                        <td>{{ log.category.name if log.category else '—' }}</td>
+                        <td>{{ log.computed_score }}</td>
+                        <td>{{ log.valid_qso_count }} / {{ log.invalid_qso_count }}</td>
+                        <td><span class="badge badge-{{ log.submission_status }}">{{ status_pl(log.submission_status) }}</span></td>
+                        <td>{{ '✓' if log.is_checklog else '' }}</td>
+                        <td>{{ log.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <div class="table-actions">
+                                <a href="{{ url_for('admin.edit_log', log_id=log.id) }}">Edytuj</a>
+                                <a href="{{ url_for('main.log_detail', log_id=log.id) }}">Podgląd</a>
+                                <form method="post" action="{{ url_for('admin.delete_log', log_id=log.id) }}" class="inline-action"
+                                      onsubmit="return confirm('Usunąć log #{{ log.id }} ({{ log.station_call or '?' }})?')">
+                                    <button type="submit" class="btn-danger btn-sm">Usuń</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="muted">Brak logów pasujących do bieżących filtrów.</p>
+    {% endif %}
+</section>
+{% endblock %}

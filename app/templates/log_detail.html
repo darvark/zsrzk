@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}Log #{{ log.id }} – {{ log.station_call or 'Nieznany' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="breadcrumb">
+            <a href="{{ url_for('main.contest_detail', contest_id=log.edition.contest_id) }}">{{ log.contest.name }}</a>
+            <span class="sep">/</span>
+            <a href="{{ url_for('main.edition_detail', edition_id=log.edition_id) }}">{{ log.edition.display_name }}</a>
+            <span class="sep">/</span>
+            Log #{{ log.id }}
+        </div>
+        <h2>{{ log.station_call or 'Nieznana stacja' }}</h2>
+    </div>
+    <span class="badge badge-{{ log.submission_status }}" style="font-size:.9rem;padding:.35rem 1rem">{{ status_pl(log.submission_status) }}</span>
+</div>
+
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ results.computed_score }}</div>
+        <div class="stat-label">Wynik obliczony</div>
+    </div>
+    <div class="stat-card stat-ok">
+        <div class="stat-value">{{ results.valid_qso_count }}</div>
+        <div class="stat-label">Poprawne QSO</div>
+    </div>
+    <div class="stat-card stat-bad">
+        <div class="stat-value">{{ results.invalid_qso_count }}</div>
+        <div class="stat-label">Niepoprawne QSO</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ results.total_multiplier }}</div>
+        <div class="stat-label">Mnożnik</div>
+    </div>
+</div>
+
+<section class="card">
+    <h3>Informacje o stacji</h3>
+    <dl style="display:grid;grid-template-columns:180px 1fr;gap:.3rem .75rem;font-size:.9rem">
+        <dt>Zawody</dt>       <dd>{{ log.contest.name }}</dd>
+        <dt>Edycja</dt>       <dd><a href="{{ url_for('main.edition_detail', edition_id=log.edition_id) }}">{{ log.edition.display_name }}</a></dd>
+        <dt>Operator</dt>     <dd>{{ log.operator or '—' }}</dd>
+        <dt>Location</dt>     <dd>{{ log.location or '—' }}</dd>
+        <dt>Grid</dt>         <dd>{{ log.grid_locator or '—' }}</dd>
+        <dt>Power</dt>        <dd>{{ log.power_category or '—' }}</dd>
+        <dt>Operators #</dt>  <dd>{{ log.operators_count or '—' }}</dd>
+        <dt>Club</dt>         <dd>{{ log.club.name if log.club else '—' }}</dd>
+        <dt>Kategoria</dt>    <dd>{{ log.category.name if log.category else '—' }}</dd>
+        <dt>Wynik deklarowany</dt><dd>{{ log.claimed_score if log.claimed_score is not none else '—' }}</dd>
+        <dt>Zgłoszono</dt>    <dd>{{ log.submitted_at.strftime('%Y-%m-%d %H:%M UTC') }}</dd>
+        <dt>Checklog</dt>     <dd>{{ 'Tak' if log.is_checklog else 'Nie' }}</dd>
+    </dl>
+</section>
+
+<section class="card">
+    <h3>Rozbicie punktacji</h3>
+    <p class="muted">
+        Suma QSO: <strong>{{ results.qso_subtotal }}</strong> &nbsp;&middot;&nbsp;
+        Premium pts: <strong>{{ results.premium_points_total }}</strong> &nbsp;&middot;&nbsp;
+        &times; multiplier <strong>{{ results.total_multiplier }}</strong> = <strong>{{ results.multiplied_score }}</strong> &nbsp;&middot;&nbsp;
+        + prefix bonus <strong>{{ results.multiplier_bonus }}</strong> = <strong class="text-ok">{{ results.computed_score }}</strong>
+    </p>
+
+    <h4>Suma wg emisji</h4>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Grupa emisji</th><th>Poprawne QSO</th><th>Punkty bazowe</th><th>Punkty premium</th><th>Suma punktów</th></tr>
+        </thead>
+        <tbody>
+            {% for mode_name, item in results.mode_breakdown.items() %}
+            <tr>
+                <td>{{ mode_name }}</td>
+                <td>{{ item.qso_count }}</td>
+                <td>{{ item.base_points }}</td>
+                <td>{{ item.premium_points }}</td>
+                <td><strong>{{ item.total_points }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+
+    <h4 style="margin-top:1rem">Składniki mnożnika</h4>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Składnik</th><th>Liczba unikalnych</th><th>Wartość reguły</th><th>Przyrost mnożnika</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Bands</td><td>{{ results.multiplier_breakdown.unique_band_count or 0 }}</td><td>{{ results.multiplier_breakdown.multiplier_per_unique_band or 0 }}</td><td>{{ results.multiplier_breakdown.band_multiplier_add or 0 }}</td></tr>
+            <tr><td>Modes</td><td>{{ results.multiplier_breakdown.unique_mode_count or 0 }}</td><td>{{ results.multiplier_breakdown.multiplier_per_unique_mode or 0 }}</td><td>{{ results.multiplier_breakdown.mode_multiplier_add or 0 }}</td></tr>
+            <tr><td>Prefixes</td><td>{{ results.multiplier_breakdown.unique_prefix_count or 0 }}</td><td>{{ results.multiplier_breakdown.multiplier_per_unique_prefix or 0 }}</td><td>{{ results.multiplier_breakdown.prefix_multiplier_add or 0 }}</td></tr>
+            <tr><td colspan="3"><strong>Mnożnik łączny</strong></td><td><strong>{{ results.total_multiplier }}</strong></td></tr>
+        </tbody>
+    </table>
+    </div>
+
+    {% if results.premium_station_hits %}
+    <h4 style="margin-top:1rem">Trafienia stacji premium</h4>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Stacja</th><th>Trafienia</th><th>Punkty/QSO</th><th>Suma</th></tr>
+        </thead>
+        <tbody>
+            {% for call, item in results.premium_station_hits.items() %}
+            <tr><td><strong>{{ call }}</strong></td><td>{{ item.hit_count }}</td><td>{{ item.points_per_qso }}</td><td>{{ item.total_points }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h3>Walidacja QSO ({{ log.qsos|length }} pozycji)</h3>
+    {% if log.qsos %}
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th><th>Date</th><th>Time</th><th>Band</th><th>Mode</th>
+                    <th>Znak korespondenta</th><th>RST wysł.</th><th>RST odebr.</th><th>Pkt</th><th>Status</th><th>Powód</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for qso in log.qsos %}
+                <tr class="{{ 'valid' if qso.is_valid else 'invalid' }}">
+                    <td class="muted">{{ qso.line_no }}</td>
+                    <td>{{ qso.qso_date or '' }}</td>
+                    <td>{{ qso.qso_time or '' }}</td>
+                    <td>{{ qso.band or qso.frequency or '' }}</td>
+                    <td>{{ qso.mode or '' }}</td>
+                    <td><strong>{{ qso.worked_call or '' }}</strong></td>
+                    <td>{{ qso.sent_rst or '' }}</td>
+                    <td>{{ qso.recv_rst or '' }}</td>
+                    <td>{{ qso.points_awarded }}</td>
+                    <td>
+                        {% if qso.is_valid %}
+                            <span class="badge badge-accepted">OK</span>
+                        {% else %}
+                            <span class="badge badge-rejected">Niepoprawne</span>
+                        {% endif %}
+                    </td>
+                    <td class="muted">{{ qso.invalid_reason or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% else %}
+        <div class="empty-state"><div class="empty-state-icon">📶</div><p>Brak wierszy QSO.</p></div>
+    {% endif %}
+</section>
+{% endblock %}

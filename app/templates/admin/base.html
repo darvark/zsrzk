@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="{{ ui_lang }}" data-theme="{{ ui_theme }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Panel administracyjny{% endblock %} – Panel administracyjny</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        /* Admin overrides */
+        :root {
+            --clr-primary:      #1a1a2e;
+            --clr-primary-dark: #0d0d1a;
+            --clr-primary-light:#2d2d5a;
+            --clr-accent:       #ee9b00;
+        }
+
+        .site-header { background: linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%); }
+
+        .site-header nav a.nav-admin-current {
+            background: rgba(238,155,0,.2);
+            color: var(--clr-accent);
+        }
+
+        .admin-badge {
+            display: inline-block;
+            background: var(--clr-accent);
+            color: #1a1a2e;
+            font-size: .7rem;
+            font-weight: 800;
+            padding: .15rem .5rem;
+            border-radius: 3px;
+            vertical-align: middle;
+            margin-left: .4rem;
+            letter-spacing: .05em;
+        }
+
+        .stat-card .stat-value { color: var(--clr-accent); }
+        .stat-card.stat-ok    .stat-value { color: var(--clr-ok); }
+        .stat-card.stat-bad   .stat-value { color: var(--clr-bad); }
+
+        thead th { background: #1a1a2e; }
+
+        .card-danger { border-left: 4px solid var(--clr-bad); }
+    </style>
+</head>
+<body class="admin-panel">
+
+<header class="site-header admin-header">
+    <div class="header-inner">
+        <a class="site-logo" href="{{ url_for('admin.dashboard') }}">
+            <img src="{{ url_for('static', filename='favicon.svg') }}" alt="Logo">
+            <span class="site-logo-text">Panel&nbsp;<span class="logo-accent">administracyjny</span> <span class="admin-badge">ADMIN</span></span>
+        </a>
+        <nav class="admin-nav">
+            <div class="admin-nav-primary">
+                <a href="{{ url_for('admin.dashboard') }}">Panel</a>
+                <a href="{{ url_for('admin.contests') }}">Zawody</a>
+                <a href="{{ url_for('admin.clubs') }}">Kluby</a>
+                <a href="{{ url_for('admin.editions') }}">Edycje</a>
+                <a href="{{ url_for('admin.logs') }}">Logi</a>
+                <a href="{{ url_for('admin.users') }}">Użytkownicy</a>
+            </div>
+            <div class="admin-nav-meta">
+                <span class="admin-nav-label">{{ t('theme') }}:</span>
+                <a href="{{ ui_url(theme='light') }}" class="nav-chip {% if ui_theme == 'light' %}active{% endif %}">{{ t('theme_light') }}</a>
+                <a href="{{ ui_url(theme='dark') }}" class="nav-chip {% if ui_theme == 'dark' %}active{% endif %}">{{ t('theme_dark') }}</a>
+                {% if current_admin_user %}
+                    <span class="admin-user-pill">{{ current_admin_user.username }}</span>
+                    <form method="post" action="{{ url_for('admin.logout') }}" class="admin-nav-form">
+                        <button type="submit" class="button admin-logout">Wyloguj</button>
+                    </form>
+                {% endif %}
+                <a href="{{ url_for('main.index') }}" class="button admin-public-link">Powrót</a>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<main class="container admin-main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-list">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+    Panel administracyjny &nbsp;·&nbsp; System rozliczania zawodów krótkofalarskich
+</footer>
+
+</body>
+</html>
