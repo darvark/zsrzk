@@ -32,6 +32,7 @@
     </div>
 </section>
 
+{% if can_manage %}
 <section class="card">
     <h3>Cykl życia edycji</h3>
     <form method="post" action="{{ url_for('main.update_edition_lifecycle', edition_id=edition.id) }}">
@@ -51,6 +52,7 @@
         <button type="submit">Zapisz cykl życia</button>
     </form>
 </section>
+{% endif %}
 
 <section class="card">
     <h3>Reguły punktacji dla edycji {{ edition.year }}</h3>
@@ -58,15 +60,16 @@
         <table>
             <thead>
                 <tr>
-                    <th>Key</th>
-                    <th>Value</th>
+                    <th>Klucz</th>
+                    <th>Wartość</th>
                     <th>Opis</th>
-                    <th>Akcje</th>
+                    {% if can_manage %}<th>Akcje</th>{% endif %}
                 </tr>
             </thead>
             <tbody>
                 {% for rule in edition.rules %}
                     <tr>
+                        {% if can_manage %}
                         <td>
                             <input name="key" type="text" value="{{ rule.key }}" aria-label="Rule key for {{ rule.key }}" form="edit-rule-{{ rule.id }}" required>
                         </td>
@@ -84,6 +87,11 @@
                                 <button class="danger" type="submit">Usuń</button>
                             </form>
                         </td>
+                        {% else %}
+                        <td>{{ rule.key }}</td>
+                        <td>{{ rule.value }}</td>
+                        <td>{{ rule.description or '' }}</td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
             </tbody>
@@ -93,6 +101,7 @@
     {% endif %}
 </section>
 
+{% if can_manage %}
 <section class="card">
     <h3>Dodaj regułę</h3>
     <p class="muted">Examples: <code>qso_points_cw=3</code>, <code>qso_points_ssb=1</code>, <code>qso_points_digi=2</code>, <code>multiplier_per_unique_band=1</code>, <code>premium_station_points=SP9ABC:5,K1TTT:10</code>.</p>
@@ -109,6 +118,7 @@
         <button type="submit">Dodaj regułę</button>
     </form>
 </section>
+{% endif %}
 
 <section class="card">
     <h3>Kategorie uczestników</h3>
@@ -117,9 +127,9 @@
         <table>
             <thead>
                 <tr>
-                    <th>Name</th>
+                    <th>Nazwa</th>
                     <th>Opis</th>
-                    <th>Akcje</th>
+                    {% if can_manage %}<th>Akcje</th>{% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -127,11 +137,13 @@
                     <tr>
                         <td>{{ category.name }}</td>
                         <td>{{ category.description or '' }}</td>
+                        {% if can_manage %}
                         <td>
                             <form method="post" action="{{ url_for('main.delete_category', edition_id=edition.id, category_id=category.id) }}" onsubmit="return confirm('Usunąć tę kategorię uczestnika?');">
                                 <button class="danger" type="submit">Usuń</button>
                             </form>
                         </td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
             </tbody>
@@ -141,6 +153,7 @@
     {% endif %}
 </section>
 
+{% if can_manage %}
 <section class="card">
     <h3>Dodaj kategorię uczestnika</h3>
     <form method="post" action="{{ url_for('main.add_category', edition_id=edition.id) }}">
@@ -153,4 +166,5 @@
         <button type="submit">Dodaj kategorię</button>
     </form>
 </section>
+{% endif %}
 {% endblock %}

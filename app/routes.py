@@ -9,7 +9,7 @@ from flask import Blueprint, Response, current_app, flash, redirect, render_temp
 from sqlalchemy import and_, case, func
 from sqlalchemy.orm import joinedload
 
-from .admin_auth import get_current_admin_user
+from .admin_auth import admin_login_required, get_current_admin_user
 from .extensions import db
 from .models import (
     CertificateTemplate,
@@ -185,6 +185,58 @@ def contests():
     return render_template("contests.html", contests=contests_list, can_manage=can_manage)
 
 
+@bp.get("/kalendarz")
+def contest_calendar():
+    """Show scheduled, published contest editions for the selected year."""
+    year = request.args.get("year", type=int) or datetime.utcnow().year
+    if not 1900 <= year <= 3000:
+        year = datetime.utcnow().year
+    month = request.args.get("month", type=int)
+    if month not in range(1, 13):
+        month = None
+
+    month_names = (
+        "Styczeń",
+        "Luty",
+        "Marzec",
+        "Kwiecień",
+        "Maj",
+        "Czerwiec",
+        "Lipiec",
+        "Sierpień",
+        "Wrzesień",
+        "Październik",
+        "Listopad",
+        "Grudzień",
+    )
+
+    editions_query = (
+        ContestEdition.query.join(ContestEdition.contest)
+        .filter(
+            ContestEdition.year == year,
+            ContestEdition.status.in_(("accepting_logs", "submission_closed")),
+            ContestEdition.submission_open_at.isnot(None),
+        )
+    )
+    if month:
+        month_start = datetime(year, month, 1)
+        month_end = datetime(year + (1 if month == 12 else 0), month % 12 + 1, 1)
+        editions_query = editions_query.filter(
+            ContestEdition.submission_open_at >= month_start,
+            ContestEdition.submission_open_at < month_end,
+        )
+    editions = editions_query.order_by(
+        ContestEdition.submission_open_at.asc(), func.lower(Contest.name).asc()
+    ).all()
+    return render_template(
+        "contest_calendar.html",
+        editions=editions,
+        year=year,
+        month=month,
+        month_names=month_names,
+    )
+
+
 @bp.route("/contests/<int:contest_id>")
 def contest_detail(contest_id: int):
     """Show one contest and the summary metrics for its editions."""
@@ -307,10 +359,14 @@ def delete_rule_note(contest_id: int, note_id: int):
 
 @bp.route("/editions/<int:edition_id>", methods=["GET", "POST"])
 def edition_detail(edition_id: int):
-    """Display one edition and allow rule creation from the public editor."""
+    """Display one edition and allow admins to create scoring rules."""
     edition = ContestEdition.query.get_or_404(edition_id)
 
     if request.method == "POST":
+        if get_current_admin_user() is None:
+            flash("Tylko administratorzy mogą edytować reguły zawodów.", "error")
+            return redirect(url_for("admin.login", next=request.full_path))
+
         key = request.form.get("key", "").strip()
         value = request.form.get("value", "").strip()
         description = request.form.get("description", "").strip()
@@ -337,10 +393,15 @@ def edition_detail(edition_id: int):
         db.session.commit()
         return redirect(url_for("main.edition_detail", edition_id=edition.id))
 
-    return render_template("edition_detail.html", edition=edition)
+    return render_template(
+        "edition_detail.html",
+        edition=edition,
+        can_manage=get_current_admin_user() is not None,
+    )
 
 
 @bp.post("/editions/<int:edition_id>/lifecycle")
+@admin_login_required
 def update_edition_lifecycle(edition_id: int):
     """Update the lifecycle status and submission window for an edition."""
     edition = ContestEdition.query.get_or_404(edition_id)
@@ -371,6 +432,7 @@ def update_edition_lifecycle(edition_id: int):
 
 
 @bp.post("/editions/<int:edition_id>/rules/<int:rule_id>/delete")
+@admin_login_required
 def delete_rule(edition_id: int, rule_id: int):
     """Delete one scoring rule from an edition."""
     edition = ContestEdition.query.get_or_404(edition_id)
@@ -382,6 +444,7 @@ def delete_rule(edition_id: int, rule_id: int):
 
 
 @bp.post("/editions/<int:edition_id>/rules/<int:rule_id>")
+@admin_login_required
 def update_rule(edition_id: int, rule_id: int):
     """Update an existing scoring rule for an edition."""
     edition = ContestEdition.query.get_or_404(edition_id)
@@ -414,6 +477,7 @@ def update_rule(edition_id: int, rule_id: int):
 
 
 @bp.post("/editions/<int:edition_id>/categories")
+@admin_login_required
 def add_category(edition_id: int):
     """Create a participant category for the selected edition."""
     edition = ContestEdition.query.get_or_404(edition_id)
@@ -442,6 +506,7 @@ def add_category(edition_id: int):
 
 
 @bp.post("/editions/<int:edition_id>/categories/<int:category_id>/delete")
+@admin_login_required
 def delete_category(edition_id: int, category_id: int):
     """Delete a participant category when it is not referenced by logs."""
     edition = ContestEdition.query.get_or_404(edition_id)

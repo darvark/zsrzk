@@ -61,6 +61,7 @@ EN_LABELS = {
 TRANSLATIONS = {
     "pl": {
         "nav_contests": "Zawody",
+        "nav_calendar": "Kalendarz",
         "nav_upload_log": "Wgraj log",
         "nav_logs": "Logi",
         "nav_certificates": "Dyplomy",

@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Kalendarz zawodów {{ year }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Kalendarz zawodów</h2>
+        <p class="muted mb-0">Zaplanowane edycje na {{ year }} rok</p>
+    </div>
+    <form method="get" class="btn-group mt-0" aria-label="Wybór roku kalendarza">
+        <label for="calendar-year">Rok</label>
+        <input id="calendar-year" name="year" type="number" min="1900" max="3000" value="{{ year }}" required>
+        <label for="calendar-month">Miesiąc</label>
+        <select id="calendar-month" name="month">
+            <option value="">Wszystkie</option>
+            {% for month_name in month_names %}
+            <option value="{{ loop.index }}" {% if month == loop.index %}selected{% endif %}>{{ month_name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Pokaż</button>
+    </form>
+</div>
+
+<section class="card">
+    <div class="form-grid">
+        <div>
+            <label for="contest-search">Szukaj zawodów</label>
+            <input id="contest-search" type="search" placeholder="Wpisz nazwę zawodów" autocomplete="off">
+        </div>
+        <div>
+            <label for="month-order">Kolejność miesięcy</label>
+            <select id="month-order">
+                <option value="asc">Styczeń – grudzień</option>
+                <option value="desc">Grudzień – styczeń</option>
+            </select>
+        </div>
+    </div>
+
+    {% if editions %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Miesiąc</th>
+                    <th>Zawody</th>
+                    <th>Termin</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="calendar-editions">
+                {% for edition in editions %}
+                <tr data-month="{{ edition.submission_open_at.month }}" data-date="{{ edition.submission_open_at.isoformat() }}" data-name="{{ (edition.contest.name ~ ' ' ~ (edition.name or ''))|lower }}">
+                    <td>{{ month_names[edition.submission_open_at.month - 1] }}</td>
+                    <td>
+                        <a href="{{ url_for('main.contest_detail', contest_id=edition.contest_id) }}"><strong>{{ edition.contest.name }}</strong></a>
+                        {% if edition.name %}<span class="muted">· {{ edition.name }}</span>{% endif %}
+                    </td>
+                    <td>
+                        {{ edition.submission_open_at.strftime('%d.%m.%Y') }}
+                        {% if edition.submission_deadline %}– {{ edition.submission_deadline.strftime('%d.%m.%Y') }}{% endif %}
+                    </td>
+                    <td><span class="badge badge-{{ edition.status }}">{{ 'Zaplanowane' if edition.status == 'accepting_logs' else 'Zamknięte' }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p id="calendar-empty-search" class="empty-state" hidden>Brak zawodów pasujących do wyszukiwania.</p>
+    {% else %}
+    <div class="empty-state">
+        <p>{% if month %}Brak zawodów w {{ month_names[month - 1] }} {{ year }} roku.{% else %}Brak zaplanowanych zawodów na {{ year }} rok.{% endif %}</p>
+    </div>
+    {% endif %}
+</section>
+
+{% if editions %}
+<script>
+    const calendarRows = Array.from(document.querySelectorAll("#calendar-editions tr"));
+    const searchInput = document.getElementById("contest-search");
+    const monthOrder = document.getElementById("month-order");
+    const noMatches = document.getElementById("calendar-empty-search");
+
+    function updateCalendar() {
+        const query = searchInput.value.trim().toLocaleLowerCase("pl");
+        const direction = monthOrder.value === "asc" ? 1 : -1;
+        const tableBody = document.getElementById("calendar-editions");
+        calendarRows.sort((first, second) => {
+            const monthDifference = Number(first.dataset.month) - Number(second.dataset.month);
+            return direction * (monthDifference || first.dataset.date.localeCompare(second.dataset.date));
+        });
+
+        let visibleCount = 0;
+        calendarRows.forEach((row) => {
+            const matches = row.dataset.name.toLocaleLowerCase("pl").includes(query);
+            row.hidden = !matches;
+            visibleCount += matches ? 1 : 0;
+            tableBody.appendChild(row);
+        });
+        noMatches.hidden = visibleCount > 0;
+    }
+
+    searchInput.addEventListener("input", updateCalendar);
+    monthOrder.addEventListener("change", updateCalendar);
+</script>
+{% endif %}
+{% endblock %}
