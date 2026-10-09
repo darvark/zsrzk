@@ -72,3 +72,37 @@ def test_contest_calendar_does_not_show_other_years(client, app_ctx):
     assert response.status_code == 200
     assert b"Next Year Contest" not in response.data
     assert "Brak zaplanowanych zawodów na 2027 rok.".encode("utf-8") in response.data
+
+
+def test_homepage_shows_only_currently_active_editions(client, app_ctx):
+    now = datetime.utcnow()
+    active_contest = Contest(name="Active Contest")
+    draft_contest = Contest(name="Draft Contest")
+    upcoming_contest = Contest(name="Upcoming Contest")
+    db.session.add_all([active_contest, draft_contest, upcoming_contest])
+    db.session.flush()
+    db.session.add_all(
+        [
+            ContestEdition(
+                contest_id=active_contest.id,
+                year=2026,
+                status="accepting_logs",
+                submission_open_at=now,
+            ),
+            ContestEdition(contest_id=draft_contest.id, year=2026, status="draft"),
+            ContestEdition(
+                contest_id=upcoming_contest.id,
+                year=2026,
+                status="accepting_logs",
+                submission_open_at=now.replace(year=now.year + 1),
+            ),
+        ]
+    )
+    db.session.commit()
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert b"Active Contest" in response.data
+    assert b"Draft Contest" not in response.data
+    assert b"Upcoming Contest" not in response.data

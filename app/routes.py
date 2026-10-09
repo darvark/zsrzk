@@ -6,7 +6,7 @@ from io import BytesIO
 from pathlib import Path
 
 from flask import Blueprint, Response, current_app, flash, redirect, render_template, request, send_file, url_for
-from sqlalchemy import and_, case, func
+from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import joinedload
 
 from .admin_auth import admin_login_required, get_current_admin_user
@@ -130,11 +130,21 @@ def _decode_uploaded_text_file(file_storage) -> str | None:
 @bp.route("/")
 def index():
     """Render the public home page with recent activity."""
-    contests = Contest.query.order_by(Contest.created_at.desc()).all()
+    now = datetime.utcnow()
+    editions = (
+        ContestEdition.query.join(ContestEdition.contest)
+        .filter(
+            ContestEdition.status == "accepting_logs",
+            or_(ContestEdition.submission_open_at.is_(None), ContestEdition.submission_open_at <= now),
+            or_(ContestEdition.submission_deadline.is_(None), ContestEdition.submission_deadline >= now),
+        )
+        .order_by(Contest.name.asc(), ContestEdition.year.desc())
+        .all()
+    )
     recent_logs = ContestLog.query.order_by(ContestLog.submitted_at.desc()).limit(10).all()
     return render_template(
         "index.html",
-        contests=contests,
+        editions=editions,
         recent_logs=recent_logs,
     )
 

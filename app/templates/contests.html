@@ -57,8 +57,10 @@
                     <td class="muted">{{ contest.description or '—' }}</td>
                     <td class="muted">{{ contest.created_at.strftime('%Y-%m-%d') }}</td>
                     <td>
-                        <a href="{{ url_for('main.contest_detail', contest_id=contest.id) }}">Zarządzaj</a>
-                        &nbsp;·&nbsp;
+                        {% if can_manage %}
+                            <a href="{{ url_for('main.contest_detail', contest_id=contest.id) }}">Zarządzaj</a>
+                            &nbsp;·&nbsp;
+                        {% endif %}
                         <a href="{{ url_for('main.contest_summary', contest_id=contest.id) }}">Podsumowanie</a>
                     </td>
                 </tr>

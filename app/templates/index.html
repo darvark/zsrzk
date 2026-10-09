@@ -6,7 +6,7 @@
 <div class="page-header">
     <div>
         <h2>Panel główny</h2>
-        <p class="muted mb-0">Przegląd wszystkich zawodów, ostatniej aktywności i opublikowanych wyników.</p>
+        <p class="muted mb-0">Aktywne zawody i ostatnia aktywność.</p>
     </div>
     <div class="btn-group mt-0">
         <a href="{{ url_for('main.contests') }}" class="button">Przeglądaj zawody</a>
@@ -15,26 +15,25 @@
 </div>
 
 <section class="card">
-    <h3>Zawody</h3>
-    {% if contests %}
+    <h3>Aktywne zawody</h3>
+    {% if editions %}
         <div class="table-wrap">
         <table>
             <thead>
                 <tr>
-                    <th>Nazwa</th>
-                    <th>Edycje</th>
-                    <th>Opis</th>
-                    <th></th>
+                    <th>Zawody</th>
+                    <th>Edycja</th>
+                    <th>Termin przyjmowania logów</th>
                 </tr>
             </thead>
             <tbody>
-                {% for contest in contests %}
+                {% for edition in editions %}
                 <tr>
-                    <td><a href="{{ url_for('main.contest_detail', contest_id=contest.id) }}"><strong>{{ contest.name }}</strong></a></td>
-                    <td>{{ contest.editions|length }}</td>
-                    <td class="muted">{{ contest.description or '—' }}</td>
+                    <td><a href="{{ url_for('main.contest_detail', contest_id=edition.contest_id) }}"><strong>{{ edition.contest.name }}</strong></a></td>
+                    <td>{{ edition.name or edition.year }}</td>
                     <td>
-                        <a href="{{ url_for('main.contest_summary', contest_id=contest.id) }}">Podsumowanie</a>
+                        {{ edition.submission_open_at.strftime('%d.%m.%Y') if edition.submission_open_at else 'Teraz' }}
+                        – {{ edition.submission_deadline.strftime('%d.%m.%Y') if edition.submission_deadline else 'bez terminu' }}
                     </td>
                 </tr>
                 {% endfor %}
@@ -44,7 +43,7 @@
     {% else %}
         <div class="empty-state">
             <div class="empty-state-icon">📡</div>
-            <p>Brak zawodów. <a href="{{ url_for('main.contests') }}">Utwórz pierwsze</a>.</p>
+            <p>Brak obecnie aktywnych zawodów. <a href="{{ url_for('main.contest_calendar') }}">Zobacz kalendarz</a>.</p>
         </div>
     {% endif %}
 </section>
